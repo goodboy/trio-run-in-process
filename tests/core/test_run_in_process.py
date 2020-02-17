@@ -33,3 +33,27 @@ async def test_run_in_process_with_error():
     with trio.fail_after(2):
         with pytest.raises(ValueError, match="Some err"):
             await run_in_process(raise_err)
+
+
+@pytest.mark.trio
+async def test_run_in_process_timeout_via_cancel():
+
+    async def sleep():
+        import trio
+        await trio.sleep_forever()
+
+    with pytest.raises(trio.TooSlowError):
+        with trio.fail_after(0.5):
+            await run_in_process(sleep)
+
+
+@pytest.mark.trio
+async def test_run_in_process_timeout_via_cancel_inside_child():
+
+    async def do_sleep():
+        import trio
+        with trio.fail_after(0.2):
+            await trio.sleep(float('inf'))
+
+    with pytest.raises(trio.TooSlowError):
+        await run_in_process(do_sleep)
